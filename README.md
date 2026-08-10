@@ -2,13 +2,15 @@
 
 iPhone’da ücretsiz, App Store’suz kişisel finans uygulaması (PWA).
 
+**Canlı adres:** https://yasnugur.github.io/apple/
+
 Veriler yalnızca telefonunda (`localStorage`) tutulur. Hesap / sunucu zorunlu değil.
 
 ## iPhone’a uygulama gibi ekleme
 
-1. Uygulamayı bir kez HTTPS ile aç (aşağıdaki yayın adımı).
-2. Safari’de **Paylaş → Ana Ekrana Ekle**.
-3. Artık ana ekrandan tam ekran uygulama gibi açılır; internet olmadan da açılabilir.
+1. Safari ile aç: https://yasnugur.github.io/apple/
+2. **Paylaş** (kare + ok) → **Ana Ekrana Ekle**
+3. Artık ana ekrandan tam ekran uygulama gibi açılır; bir kez yüklendikten sonra çevrimdışı da çalışır.
 
 ## Geliştirme
 
@@ -16,22 +18,6 @@ Veriler yalnızca telefonunda (`localStorage`) tutulur. Hesap / sunucu zorunlu d
 npm install
 npm run dev
 ```
-
-Telefonundan denemek için bilgisayar ve telefon aynı Wi‑Fi’de olsun:
-
-```bash
-npm run dev -- --host
-```
-
-Çıkan `http://SENIN-IP:5173` adresini Safari’de aç.
-
-## Ücretsiz yayın (önerilen)
-
-```bash
-npm run build
-```
-
-`dist` klasörünü Cloudflare Pages, Netlify veya GitHub Pages’e yükle. Ücretsiz hesap yeter.
 
 ## Özellikler
 

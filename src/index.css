@@ -293,6 +293,36 @@ button {
   background: linear-gradient(90deg, #a13d3d, #c06a4a);
 }
 
+.seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
+}
+
+.seg button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+}
+
+.seg button.active {
+  background: var(--teal);
+  color: #fff;
+}
+
+.brand .btn {
+  flex-shrink: 0;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+}
+
 .nav {
   position: fixed;
   left: 50%;
@@ -302,7 +332,7 @@ button {
   height: calc(var(--nav-h) + var(--safe-b));
   padding: 8px 8px calc(8px + var(--safe-b));
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 2px;
   background: rgba(244, 247, 245, 0.92);
   border-top: 1px solid var(--line);

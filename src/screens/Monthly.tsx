@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   savings,
   sumExpense,
@@ -6,54 +6,51 @@ import {
   sumInvestment,
 } from '../calc'
 import { tl } from '../format'
+import { categoriesFor, kindLabels } from '../labels'
 import { useStore } from '../store'
-import { emptyMonth } from '../storage'
-import type { MonthlyFinance } from '../types'
-
-function MoneyInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: number
-  onChange: (n: number) => void
-}) {
-  return (
-    <div className="field">
-      <label>{label}</label>
-      <input
-        inputMode="decimal"
-        type="number"
-        value={value || ''}
-        placeholder="0"
-        onChange={(e) => onChange(Number(e.target.value) || 0)}
-      />
-    </div>
-  )
-}
+import type { EntryKind } from '../types'
 
 export function Monthly() {
-  const { monthKey, setMonthKey, currentMonth, saveMonth, data } = useStore()
-  const [draft, setDraft] = useState<MonthlyFinance>(currentMonth)
+  const { data, monthKey, setMonthKey, addEntry, removeEntry } = useStore()
+  const [kind, setKind] = useState<EntryKind>('income')
+  const [category, setCategory] = useState<string>(categoriesFor('income')[0])
+  const [amount, setAmount] = useState('')
+  const [note, setNote] = useState('')
 
-  useEffect(() => {
-    setDraft(currentMonth)
-  }, [currentMonth])
+  const cats = categoriesFor(kind)
+  const list = useMemo(
+    () =>
+      data.entries
+        .filter((e) => e.month === monthKey && e.kind === kind)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [data.entries, monthKey, kind],
+  )
 
-  const patchIncome = (k: keyof MonthlyFinance['income'], n: number) =>
-    setDraft((d) => ({ ...d, income: { ...d.income, [k]: n } }))
-  const patchExpense = (k: keyof MonthlyFinance['expense'], n: number) =>
-    setDraft((d) => ({ ...d, expense: { ...d.expense, [k]: n } }))
-  const patchInvest = (k: keyof MonthlyFinance['investment'], n: number) =>
-    setDraft((d) => ({ ...d, investment: { ...d.investment, [k]: n } }))
+  const switchKind = (k: EntryKind) => {
+    setKind(k)
+    setCategory(categoriesFor(k)[0])
+  }
+
+  const submit = () => {
+    const n = Number(amount)
+    if (!Number.isFinite(n) || n <= 0) return
+    addEntry({
+      month: monthKey,
+      kind,
+      category,
+      amount: n,
+      note: note.trim(),
+    })
+    setAmount('')
+    setNote('')
+  }
 
   return (
     <div className="stack install">
       <header className="brand">
         <div>
           <h1>Aylık Finans</h1>
-          <p>Ay sonunda toplamları gir.</p>
+          <p>Gelir, gider ve yatırımı ayrı ayrı ekle.</p>
         </div>
       </header>
 
@@ -62,73 +59,107 @@ export function Monthly() {
         <input
           type="month"
           value={monthKey}
-          onChange={(e) => {
-            const k = e.target.value
-            if (!k) return
-            setMonthKey(k)
-            setDraft(data.months.find((m) => m.month === k) ?? emptyMonth(k))
-          }}
+          onChange={(e) => e.target.value && setMonthKey(e.target.value)}
         />
       </div>
 
       <div className="grid2">
         <div className="metric">
           <div className="label">Gelir</div>
-          <div className="value pos">{tl(sumIncome(draft))}</div>
+          <div className="value pos">{tl(sumIncome(data.entries, monthKey))}</div>
         </div>
         <div className="metric">
           <div className="label">Gider</div>
-          <div className="value neg">{tl(sumExpense(draft))}</div>
+          <div className="value neg">{tl(sumExpense(data.entries, monthKey))}</div>
         </div>
         <div className="metric">
           <div className="label">Yatırım</div>
-          <div className="value">{tl(sumInvestment(draft))}</div>
+          <div className="value">{tl(sumInvestment(data.entries, monthKey))}</div>
         </div>
         <div className="metric">
           <div className="label">Tasarruf</div>
-          <div className={`value ${savings(draft) >= 0 ? 'pos' : 'neg'}`}>
-            {tl(savings(draft))}
+          <div className={`value ${savings(data.entries, monthKey) >= 0 ? 'pos' : 'neg'}`}>
+            {tl(savings(data.entries, monthKey))}
           </div>
         </div>
       </div>
 
+      <div className="seg">
+        {(Object.keys(kindLabels) as EntryKind[]).map((k) => (
+          <button
+            key={k}
+            type="button"
+            className={kind === k ? 'active' : undefined}
+            onClick={() => switchKind(k)}
+          >
+            {kindLabels[k]}
+          </button>
+        ))}
+      </div>
+
       <section className="panel">
-        <h2>Gelir</h2>
-        <p className="sub">Maaş, ek gelir ve diğer.</p>
+        <h2>{kindLabels[kind]} ekle</h2>
+        <p className="sub">Tek kayıt ekle — toplu ay sonu formu yok.</p>
         <div className="stack">
-          <MoneyInput label="Maaş" value={draft.income.maas} onChange={(n) => patchIncome('maas', n)} />
-          <MoneyInput label="Ek gelir" value={draft.income.ek} onChange={(n) => patchIncome('ek', n)} />
-          <MoneyInput label="Diğer" value={draft.income.diger} onChange={(n) => patchIncome('diger', n)} />
+          <div className="field">
+            <label>Kategori</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              {cats.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Tutar (TL)</label>
+            <input
+              inputMode="decimal"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+          <div className="field">
+            <label>Not (opsiyonel)</label>
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Örn. Nisan kart ekstresi"
+            />
+          </div>
+          <button className="btn" type="button" onClick={submit}>
+            {kindLabels[kind]} ekle
+          </button>
         </div>
       </section>
 
       <section className="panel">
-        <h2>Gider</h2>
-        <p className="sub">Tek tek fiş değil — ay sonu toplamları.</p>
-        <div className="stack">
-          <MoneyInput label="Kredi kartı" value={draft.expense.krediKarti} onChange={(n) => patchExpense('krediKarti', n)} />
-          <MoneyInput label="Nakit harcama" value={draft.expense.nakit} onChange={(n) => patchExpense('nakit', n)} />
-          <MoneyInput label="Kira" value={draft.expense.kira} onChange={(n) => patchExpense('kira', n)} />
-          <MoneyInput label="Faturalar" value={draft.expense.faturalar} onChange={(n) => patchExpense('faturalar', n)} />
-          <MoneyInput label="Diğer" value={draft.expense.diger} onChange={(n) => patchExpense('diger', n)} />
-        </div>
+        <h2>Bu ay · {kindLabels[kind]}</h2>
+        {list.length === 0 ? (
+          <p className="empty">Kayıt yok.</p>
+        ) : (
+          <div className="list">
+            {list.map((e) => (
+              <div className="row" key={e.id}>
+                <div>
+                  <div className="title">{e.category}</div>
+                  <div className="meta">{e.note || '—'}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <strong>{tl(e.amount)}</strong>
+                  <div>
+                    <button className="btn ghost" type="button" onClick={() => removeEntry(e.id)}>
+                      Sil
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
-
-      <section className="panel">
-        <h2>Yatırım</h2>
-        <p className="sub">Bu ay yatırılan tutarlar (TL).</p>
-        <div className="stack">
-          <MoneyInput label="Altın" value={draft.investment.altin} onChange={(n) => patchInvest('altin', n)} />
-          <MoneyInput label="Döviz" value={draft.investment.doviz} onChange={(n) => patchInvest('doviz', n)} />
-          <MoneyInput label="Hisse" value={draft.investment.hisse} onChange={(n) => patchInvest('hisse', n)} />
-          <MoneyInput label="Fon" value={draft.investment.fon} onChange={(n) => patchInvest('fon', n)} />
-          <MoneyInput label="Diğer" value={draft.investment.diger} onChange={(n) => patchInvest('diger', n)} />
-        </div>
-      </section>
-
-      <button className="btn" type="button" onClick={() => saveMonth({ ...draft, month: monthKey })}>
-        Ayı kaydet
-      </button>
     </div>
   )
 }

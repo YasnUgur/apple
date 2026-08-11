@@ -7,31 +7,27 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { AppData, Asset, Debt, MarketRates, MonthlyFinance } from './types'
+import type { AppData, Asset, FinanceEntry, MarketRates } from './types'
 import {
   currentMonthKey,
-  emptyMonth,
   loadData,
   saveData,
   uid,
   upsertAsset,
-  upsertDebt,
-  upsertMonth,
 } from './storage'
 
 type Store = {
   data: AppData
   monthKey: string
   setMonthKey: (k: string) => void
-  currentMonth: MonthlyFinance
-  saveMonth: (m: MonthlyFinance) => void
+  addEntry: (e: Omit<FinanceEntry, 'id' | 'createdAt'>) => void
+  removeEntry: (id: string) => void
   addAsset: (a: Omit<Asset, 'id'>) => void
   updateAsset: (a: Asset) => void
   removeAsset: (id: string) => void
-  addDebt: (d: Omit<Debt, 'id'>) => void
-  updateDebt: (d: Debt) => void
-  removeDebt: (id: string) => void
   updateMarket: (m: Partial<MarketRates>) => void
+  setMarket: (m: MarketRates) => void
+  setHideNetWorth: (v: boolean) => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -44,12 +40,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveData(data)
   }, [data])
 
-  const currentMonth = useMemo(() => {
-    return data.months.find((m) => m.month === monthKey) ?? emptyMonth(monthKey)
-  }, [data.months, monthKey])
+  const addEntry = useCallback((e: Omit<FinanceEntry, 'id' | 'createdAt'>) => {
+    setData((d) => ({
+      ...d,
+      entries: [
+        ...d.entries,
+        { ...e, id: uid(), createdAt: new Date().toISOString() },
+      ],
+    }))
+  }, [])
 
-  const saveMonth = useCallback((m: MonthlyFinance) => {
-    setData((d) => ({ ...d, months: upsertMonth(d.months, m) }))
+  const removeEntry = useCallback((id: string) => {
+    setData((d) => ({ ...d, entries: d.entries.filter((x) => x.id !== id) }))
   }, [])
 
   const addAsset = useCallback((a: Omit<Asset, 'id'>) => {
@@ -67,21 +69,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, assets: d.assets.filter((x) => x.id !== id) }))
   }, [])
 
-  const addDebt = useCallback((debt: Omit<Debt, 'id'>) => {
-    setData((d) => ({
-      ...d,
-      debts: upsertDebt(d.debts, { ...debt, id: uid() }),
-    }))
-  }, [])
-
-  const updateDebt = useCallback((debt: Debt) => {
-    setData((d) => ({ ...d, debts: upsertDebt(d.debts, debt) }))
-  }, [])
-
-  const removeDebt = useCallback((id: string) => {
-    setData((d) => ({ ...d, debts: d.debts.filter((x) => x.id !== id) }))
-  }, [])
-
   const updateMarket = useCallback((m: Partial<MarketRates>) => {
     setData((d) => ({
       ...d,
@@ -89,33 +76,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const setMarket = useCallback((m: MarketRates) => {
+    setData((d) => ({ ...d, market: m }))
+  }, [])
+
+  const setHideNetWorth = useCallback((v: boolean) => {
+    setData((d) => ({ ...d, hideNetWorth: v }))
+  }, [])
+
   const value = useMemo(
     () => ({
       data,
       monthKey,
       setMonthKey,
-      currentMonth,
-      saveMonth,
+      addEntry,
+      removeEntry,
       addAsset,
       updateAsset,
       removeAsset,
-      addDebt,
-      updateDebt,
-      removeDebt,
       updateMarket,
+      setMarket,
+      setHideNetWorth,
     }),
     [
       data,
       monthKey,
-      currentMonth,
-      saveMonth,
+      addEntry,
+      removeEntry,
       addAsset,
       updateAsset,
       removeAsset,
-      addDebt,
-      updateDebt,
-      removeDebt,
       updateMarket,
+      setMarket,
+      setHideNetWorth,
     ],
   )
 

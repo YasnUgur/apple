@@ -1,39 +1,26 @@
 import {
   investmentPortfolioValue,
-  netWorth,
   pctChange,
+  prevMonthKey,
   savings,
   sumExpense,
   sumIncome,
   sumInvestment,
   totalAssets,
-  totalDebts,
-  upcomingDebts,
 } from '../calc'
-import { monthLabel, shortDate, tl } from '../format'
+import { monthLabel, tl } from '../format'
 import { useStore } from '../store'
-import { emptyMonth } from '../storage'
 
 export function Dashboard() {
-  const { data, currentMonth, monthKey } = useStore()
+  const { data, monthKey, setHideNetWorth } = useStore()
   const assets = totalAssets(data.assets, data.market)
-  const debts = totalDebts(data.debts)
-  const net = netWorth(data.assets, data.debts, data.market)
-  const income = sumIncome(currentMonth)
-  const expense = sumExpense(currentMonth)
-  const invest = sumInvestment(currentMonth)
-  const save = savings(currentMonth)
+  const income = sumIncome(data.entries, monthKey)
+  const expense = sumExpense(data.entries, monthKey)
+  const invest = sumInvestment(data.entries, monthKey)
+  const save = savings(data.entries, monthKey)
   const portfolio = investmentPortfolioValue(data.assets, data.market)
-  const upcoming = upcomingDebts(data.debts, 15)
-  const upcomingTotal = upcoming.reduce((s, d) => s + d.amount, 0)
-
-  const prevKey = (() => {
-    const [y, m] = monthKey.split('-').map(Number)
-    const d = new Date(y, m - 2, 1)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  })()
-  const prev = data.months.find((m) => m.month === prevKey) ?? emptyMonth(prevKey)
-  const savePct = pctChange(save, savings(prev))
+  const prev = prevMonthKey(monthKey)
+  const savePct = pctChange(save, savings(data.entries, prev))
 
   return (
     <div className="stack install">
@@ -42,21 +29,28 @@ export function Dashboard() {
           <h1>Apple</h1>
           <p>{monthLabel(monthKey)}</p>
         </div>
+        <button
+          className="btn secondary"
+          type="button"
+          onClick={() => setHideNetWorth(!data.hideNetWorth)}
+        >
+          {data.hideNetWorth ? 'Net varlığı göster' : 'Net varlığı gizle'}
+        </button>
       </header>
 
       <section className="hero-metric">
         <div className="label">Net varlık</div>
-        <div className="value">{tl(net)}</div>
+        <div className="value">{data.hideNetWorth ? '••••••' : tl(assets)}</div>
       </section>
 
       <div className="grid2">
         <div className="metric">
           <div className="label">Toplam varlık</div>
-          <div className="value">{tl(assets)}</div>
+          <div className="value">{data.hideNetWorth ? '••••' : tl(assets)}</div>
         </div>
         <div className="metric">
-          <div className="label">Toplam borç</div>
-          <div className="value neg">{tl(debts)}</div>
+          <div className="label">Portföy</div>
+          <div className="value">{data.hideNetWorth ? '••••' : tl(portfolio)}</div>
         </div>
         <div className="metric">
           <div className="label">Bu ay gelir</div>
@@ -86,34 +80,10 @@ export function Dashboard() {
       )}
 
       <section className="panel">
-        <h2>Yaklaşan ödemeler</h2>
-        <p className="sub">
-          Önümüzdeki 15 gün içerisinde {tl(upcomingTotal)} ödeme var.
+        <h2>Kısa not</h2>
+        <p className="sub" style={{ marginBottom: 0 }}>
+          Borç / taksit ödemelerini Aylık → Gider altında ekleyebilirsin.
         </p>
-        {upcoming.length === 0 ? (
-          <p className="empty">Yaklaşan ödeme yok.</p>
-        ) : (
-          <div className="list">
-            {upcoming.map((d) => (
-              <div className="row" key={d.id}>
-                <div>
-                  <div className="title">{d.name}</div>
-                  <div className="meta">{shortDate(d.dueDate)}</div>
-                </div>
-                <strong>{tl(d.amount)}</strong>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="panel">
-        <h2>Yatırım portföyü</h2>
-        <p className="sub">Güncel piyasa değerleriyle.</p>
-        <div className="metric">
-          <div className="label">Portföy değeri</div>
-          <div className="value">{tl(portfolio)}</div>
-        </div>
       </section>
     </div>
   )

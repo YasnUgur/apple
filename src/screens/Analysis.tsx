@@ -1,34 +1,25 @@
 import {
   assetValueTl,
+  monthKeys,
   pctChange,
+  prevMonthKey,
   savings,
   sumExpense,
   sumIncome,
-  sumInvestment,
-  totalDebts,
 } from '../calc'
 import { monthLabel, tl } from '../format'
 import { assetLabels } from '../labels'
 import { useStore } from '../store'
-import { emptyMonth } from '../storage'
 import type { AssetType } from '../types'
 
 export function Analysis() {
   const { data, monthKey } = useStore()
-  const months = [...data.months].sort((a, b) => a.month.localeCompare(b.month))
-  const current = months.find((m) => m.month === monthKey) ?? emptyMonth(monthKey)
+  const keys = [...new Set([monthKey, ...monthKeys(data.entries)])].sort()
+  const series = keys.slice(-6)
 
-  const prevKey = (() => {
-    const [y, m] = monthKey.split('-').map(Number)
-    const d = new Date(y, m - 2, 1)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  })()
-  const prev = months.find((m) => m.month === prevKey) ?? emptyMonth(prevKey)
-
-  const series = months.slice(-6)
   const maxVal = Math.max(
     1,
-    ...series.flatMap((m) => [sumIncome(m), sumExpense(m), savings(m), sumInvestment(m)]),
+    ...series.flatMap((m) => [sumIncome(data.entries, m), sumExpense(data.entries, m)]),
   )
 
   const byType = data.assets.reduce<Record<string, number>>((acc, a) => {
@@ -37,8 +28,14 @@ export function Analysis() {
   }, {})
   const assetTotal = Object.values(byType).reduce((s, n) => s + n, 0) || 1
 
-  const savePct = pctChange(savings(current), savings(prev))
-  const expPct = pctChange(sumExpense(current), sumExpense(prev))
+  const savePct = pctChange(
+    savings(data.entries, monthKey),
+    savings(data.entries, prevMonthKey(monthKey)),
+  )
+  const expPct = pctChange(
+    sumExpense(data.entries, monthKey),
+    sumExpense(data.entries, prevMonthKey(monthKey)),
+  )
 
   return (
     <div className="stack install">
@@ -74,27 +71,27 @@ export function Analysis() {
         ) : (
           <div className="bars">
             {series.map((m) => (
-              <div key={m.month}>
-                <div className="section-title">{monthLabel(m.month)}</div>
+              <div key={m}>
+                <div className="section-title">{monthLabel(m)}</div>
                 <div className="bar-row">
                   <span>Gelir</span>
                   <div className="bar-track">
                     <div
                       className="bar-fill"
-                      style={{ width: `${(sumIncome(m) / maxVal) * 100}%` }}
+                      style={{ width: `${(sumIncome(data.entries, m) / maxVal) * 100}%` }}
                     />
                   </div>
-                  <span>{tl(sumIncome(m))}</span>
+                  <span>{tl(sumIncome(data.entries, m))}</span>
                 </div>
                 <div className="bar-row">
                   <span>Gider</span>
                   <div className="bar-track">
                     <div
                       className="bar-fill expense"
-                      style={{ width: `${(sumExpense(m) / maxVal) * 100}%` }}
+                      style={{ width: `${(sumExpense(data.entries, m) / maxVal) * 100}%` }}
                     />
                   </div>
-                  <span>{tl(sumExpense(m))}</span>
+                  <span>{tl(sumExpense(data.entries, m))}</span>
                 </div>
               </div>
             ))}
@@ -120,15 +117,6 @@ export function Analysis() {
             ))}
           </div>
         )}
-      </section>
-
-      <section className="panel">
-        <h2>Borç</h2>
-        <p className="sub">Toplam borç yükü.</p>
-        <div className="metric">
-          <div className="label">Toplam</div>
-          <div className="value neg">{tl(totalDebts(data.debts))}</div>
-        </div>
       </section>
     </div>
   )

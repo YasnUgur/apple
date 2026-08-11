@@ -2,21 +2,55 @@ export type AssetType =
   | 'banka'
   | 'nakit'
   | 'altin'
+  | 'ceyrek'
+  | 'yarim'
+  | 'tam'
   | 'usd'
   | 'eur'
   | 'hisse'
   | 'fon'
   | 'diger'
 
-export type DebtType =
-  | 'kredi_karti'
-  | 'kredi'
-  | 'taksit'
-  | 'kira'
-  | 'fatura'
-  | 'diger'
+export type EntryKind = 'income' | 'expense' | 'investment'
 
-export type MonthlyFinance = {
+export type FinanceEntry = {
+  id: string
+  month: string
+  kind: EntryKind
+  category: string
+  amount: number
+  note: string
+  createdAt: string
+}
+
+export type Asset = {
+  id: string
+  type: AssetType
+  name: string
+  amount: number
+}
+
+export type MarketRates = {
+  altinGram: number
+  ceyrek: number
+  yarim: number
+  tam: number
+  usd: number
+  eur: number
+  updatedAt: string
+}
+
+export type AppData = {
+  entries: FinanceEntry[]
+  assets: Asset[]
+  market: MarketRates
+  hideNetWorth: boolean
+}
+
+export type TabId = 'dashboard' | 'monthly' | 'assets' | 'market' | 'analysis'
+
+/** Eski ay toplam modeli — sadece migration için */
+export type LegacyMonthlyFinance = {
   month: string
   income: { maas: number; ek: number; diger: number }
   expense: {
@@ -34,40 +68,3 @@ export type MonthlyFinance = {
     diger: number
   }
 }
-
-export type Asset = {
-  id: string
-  type: AssetType
-  name: string
-  amount: number
-}
-
-export type Debt = {
-  id: string
-  name: string
-  type: DebtType
-  amount: number
-  dueDate: string
-}
-
-export type MarketRates = {
-  altinGram: number
-  usd: number
-  eur: number
-  updatedAt: string
-}
-
-export type AppData = {
-  months: MonthlyFinance[]
-  assets: Asset[]
-  debts: Debt[]
-  market: MarketRates
-}
-
-export type TabId =
-  | 'dashboard'
-  | 'monthly'
-  | 'assets'
-  | 'debts'
-  | 'market'
-  | 'analysis'

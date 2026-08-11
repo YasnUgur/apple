@@ -26,13 +26,13 @@ export function Assets() {
       <header className="brand">
         <div>
           <h1>Varlıklar</h1>
-          <p>Sahip oldukların — güncel TL karşılığı.</p>
+          <p>Gram, çeyrek, yarım, tam altın dahil.</p>
         </div>
       </header>
 
       <section className="panel">
         <h2>Varlık ekle</h2>
-        <p className="sub">Altın/döviz miktarı; banka/nakit TL olarak.</p>
+        <p className="sub">Adet/gram veya TL olarak gir.</p>
         <div className="stack">
           <div className="field">
             <label>Tür</label>
@@ -46,7 +46,7 @@ export function Assets() {
           </div>
           <div className="field">
             <label>Ad</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. Ziraat vadesiz" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. 3 çeyrek" />
           </div>
           <div className="field">
             <label>Miktar ({assetUnits[type]})</label>

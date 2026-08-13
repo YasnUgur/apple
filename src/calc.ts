@@ -71,7 +71,11 @@ export function prevMonthKey(monthKey: string): string {
 export function entriesForMonth(entries: FinanceEntry[], month: string, kind?: FinanceEntry['kind']) {
   return entries
     .filter((e) => e.month === month && (!kind || e.kind === kind))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .sort((a, b) => {
+      const da = a.date || a.createdAt
+      const db = b.date || b.createdAt
+      return db.localeCompare(da)
+    })
 }
 
 export function goldBuysForMonth(entries: FinanceEntry[], month: string) {

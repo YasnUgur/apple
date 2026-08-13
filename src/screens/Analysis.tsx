@@ -12,7 +12,7 @@ import {
   sumIncome,
   sumInvestment,
 } from '../calc'
-import { monthLabel, num, tl } from '../format'
+import { monthLabel, num, shortDate, tl } from '../format'
 import { assetLabels, assetUnits, entryMeta, kindLabels } from '../labels'
 import { useStore } from '../store'
 import type { AssetType, EntryKind } from '../types'
@@ -253,7 +253,10 @@ function MonthSection({
             <div className="row" key={e.id}>
               <div>
                 <div className="title">{e.category}</div>
-                <div className="meta">{entryMeta(e)}</div>
+                <div className="meta">
+                  {shortDate(e.date || e.createdAt)}
+                  {entryMeta(e) !== '—' ? ` · ${entryMeta(e)}` : e.note ? ` · ${e.note}` : ''}
+                </div>
               </div>
               <strong>{tl(e.amount)}</strong>
             </div>

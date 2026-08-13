@@ -29,10 +29,18 @@ export function monthLabel(key: string): string {
 }
 
 export function shortDate(iso: string): string {
+  const value = iso.length === 10 ? `${iso}T12:00:00` : iso
   return new Intl.DateTimeFormat('tr-TR', {
     day: 'numeric',
     month: 'short',
-  }).format(new Date(iso))
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
+export function entryDateKey(e: { date?: string; createdAt: string; month: string }): string {
+  if (e.date) return e.date
+  if (e.createdAt) return e.createdAt.slice(0, 10)
+  return `${e.month}-01`
 }
 
 export function parseAmount(raw: string): number {

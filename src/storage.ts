@@ -29,6 +29,21 @@ export function currentMonthKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+export function todayKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function monthFromDate(date: string): string {
+  return date.slice(0, 7)
+}
+
+function entryDate(e: Partial<FinanceEntry>): string {
+  if (e.date) return e.date
+  if (e.createdAt) return e.createdAt.slice(0, 10)
+  if (e.month) return `${e.month}-01`
+  return todayKey()
+}
+
 function migrateMonths(months: LegacyMonthlyFinance[]): FinanceEntry[] {
   const out: FinanceEntry[] = []
   for (const m of months) {
@@ -37,6 +52,7 @@ function migrateMonths(months: LegacyMonthlyFinance[]): FinanceEntry[] {
       out.push({
         id: uid(),
         month: m.month,
+        date: `${m.month}-01`,
         kind,
         category,
         amount,
@@ -76,7 +92,14 @@ export function loadData(): AppData {
       ...defaultData(),
       ...parsed,
       market: { ...defaultMarket(), ...parsed.market },
-      entries: parsed.entries?.length ? parsed.entries : fromMonths,
+      entries: (parsed.entries?.length ? parsed.entries : fromMonths).map((e) => {
+        const date = entryDate(e)
+        return {
+          ...e,
+          date,
+          month: e.month || monthFromDate(date),
+        }
+      }),
       assets: parsed.assets ?? [],
       hideNetWorth: Boolean(parsed.hideNetWorth),
     }

@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   savings,
   sumExpense,
   sumIncome,
   sumInvestment,
 } from '../calc'
-import { tl } from '../format'
+import { shortDate, tl } from '../format'
 import {
   categoriesFor,
   entryMeta,
@@ -14,6 +14,7 @@ import {
   kindLabels,
 } from '../labels'
 import { useStore } from '../store'
+import { monthFromDate, todayKey } from '../storage'
 import type { EntryKind, GoldType } from '../types'
 
 const goldTypes = Object.keys(goldLabels) as GoldType[]
@@ -27,6 +28,14 @@ export function Monthly() {
   const [unitPrice, setUnitPrice] = useState('')
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [date, setDate] = useState(todayKey)
+
+  useEffect(() => {
+    if (!date.startsWith(monthKey)) {
+      const day = date.slice(8) || '01'
+      setDate(`${monthKey}-${day}`)
+    }
+  }, [monthKey])
 
   const cats = categoriesFor(kind)
   const isGoldInvest = kind === 'investment' && category === 'Altın'
@@ -38,7 +47,7 @@ export function Monthly() {
     () =>
       data.entries
         .filter((e) => e.month === monthKey && e.kind === kind)
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        .sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt)),
     [data.entries, monthKey, kind],
   )
 
@@ -47,11 +56,21 @@ export function Monthly() {
     setCategory(categoriesFor(k)[0])
   }
 
+  const onDateChange = (value: string) => {
+    if (!value) return
+    setDate(value)
+    setMonthKey(monthFromDate(value))
+  }
+
   const submit = () => {
+    const entryDate = date || todayKey()
+    const entryMonth = monthFromDate(entryDate)
+
     if (isGoldInvest) {
       if (qty <= 0 || price <= 0) return
       addEntry({
-        month: monthKey,
+        month: entryMonth,
+        date: entryDate,
         kind: 'investment',
         category: goldLabels[goldType],
         amount: goldTotal,
@@ -69,7 +88,8 @@ export function Monthly() {
     const n = Number(amount)
     if (!Number.isFinite(n) || n <= 0) return
     addEntry({
-      month: monthKey,
+      month: entryMonth,
+      date: entryDate,
       kind,
       category,
       amount: n,
@@ -84,7 +104,7 @@ export function Monthly() {
       <header className="brand">
         <div>
           <h1>Aylık Finans</h1>
-          <p>Gelir, gider ve yatırımı ayrı ayrı ekle.</p>
+          <p>Gelir, gider ve yatırımı tarihleriyle tut.</p>
         </div>
       </header>
 
@@ -135,10 +155,15 @@ export function Monthly() {
         <h2>{kindLabels[kind]} ekle</h2>
         <p className="sub">
           {isGoldInvest
-            ? 'Altın türünü seç, adet/gram ve alış fiyatını gir.'
-            : 'Tek kayıt ekle.'}
+            ? 'Tarih, altın türü, adet ve alış fiyatını gir.'
+            : 'Tarih ve tutarla tek kayıt ekle.'}
         </p>
         <div className="stack">
+          <div className="field">
+            <label>Tarih</label>
+            <input type="date" value={date} onChange={(e) => onDateChange(e.target.value)} />
+          </div>
+
           <div className="field">
             <label>Kategori</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -227,7 +252,10 @@ export function Monthly() {
               <div className="row" key={e.id}>
                 <div>
                   <div className="title">{e.category}</div>
-                  <div className="meta">{entryMeta(e)}</div>
+                  <div className="meta">
+                    {shortDate(e.date || e.createdAt)}
+                    {entryMeta(e) !== '—' ? ` · ${entryMeta(e)}` : e.note ? ` · ${e.note}` : ''}
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <strong>{tl(e.amount)}</strong>

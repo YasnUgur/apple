@@ -11,7 +11,9 @@ import type { AppData, Asset, FinanceEntry, MarketRates } from './types'
 import {
   currentMonthKey,
   loadData,
+  monthFromDate,
   saveData,
+  todayKey,
   uid,
   upsertAsset,
 } from './storage'
@@ -42,8 +44,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const addEntry = useCallback((e: Omit<FinanceEntry, 'id' | 'createdAt'>) => {
     setData((d) => {
+      const date = e.date || todayKey()
       const entry: FinanceEntry = {
         ...e,
+        date,
+        month: e.month || monthFromDate(date),
         id: uid(),
         createdAt: new Date().toISOString(),
       }

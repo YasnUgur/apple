@@ -18,6 +18,7 @@ export type EntryKind = 'income' | 'expense' | 'investment'
 export type FinanceEntry = {
   id: string
   month: string
+  date: string
   kind: EntryKind
   category: string
   amount: number

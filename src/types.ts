@@ -11,6 +11,8 @@ export type AssetType =
   | 'fon'
   | 'diger'
 
+export type GoldType = 'altin' | 'ceyrek' | 'yarim' | 'tam'
+
 export type EntryKind = 'income' | 'expense' | 'investment'
 
 export type FinanceEntry = {
@@ -21,6 +23,9 @@ export type FinanceEntry = {
   amount: number
   note: string
   createdAt: string
+  goldType?: GoldType
+  quantity?: number
+  unitPrice?: number
 }
 
 export type Asset = {

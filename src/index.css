@@ -386,6 +386,44 @@ button {
   }
 }
 
+.month-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 14px;
+  padding: 12px;
+  color: inherit;
+}
+
+.month-card:active {
+  background: rgba(15, 92, 76, 0.08);
+}
+
+.meta-line {
+  margin-top: 8px;
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.panel-hit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.panel-hit h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .install {
     animation: none;

@@ -1,4 +1,4 @@
-import type { AssetType, EntryKind } from './types'
+import type { AssetType, EntryKind, FinanceEntry, GoldType } from './types'
 
 export const assetLabels: Record<AssetType, string> = {
   banka: 'Banka',
@@ -28,6 +28,20 @@ export const assetUnits: Record<AssetType, string> = {
   diger: 'TL',
 }
 
+export const goldLabels: Record<GoldType, string> = {
+  ceyrek: 'Çeyrek altın',
+  yarim: 'Yarım altın',
+  tam: 'Tam altın',
+  altin: 'Gram altın',
+}
+
+export const goldUnits: Record<GoldType, string> = {
+  ceyrek: 'adet',
+  yarim: 'adet',
+  tam: 'adet',
+  altin: 'gr',
+}
+
 export const incomeCategories = ['Maaş', 'Ek gelir', 'Kira geliri', 'Diğer'] as const
 export const expenseCategories = [
   'Kredi kartı',
@@ -41,7 +55,6 @@ export const expenseCategories = [
 ] as const
 export const investmentCategories = [
   'Altın',
-  'Çeyrek / yarım / tam',
   'Döviz',
   'Hisse',
   'Fon',
@@ -58,4 +71,11 @@ export function categoriesFor(kind: EntryKind): readonly string[] {
   if (kind === 'income') return incomeCategories
   if (kind === 'expense') return expenseCategories
   return investmentCategories
+}
+
+export function entryMeta(e: FinanceEntry): string {
+  if (e.goldType && e.quantity != null && e.unitPrice != null) {
+    return `${e.quantity} ${goldUnits[e.goldType]} · birim ${e.unitPrice.toLocaleString('tr-TR')} TL`
+  }
+  return e.note || '—'
 }

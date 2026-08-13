@@ -67,3 +67,24 @@ export function prevMonthKey(monthKey: string): string {
   const d = new Date(y, m - 2, 1)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
+
+export function entriesForMonth(entries: FinanceEntry[], month: string, kind?: FinanceEntry['kind']) {
+  return entries
+    .filter((e) => e.month === month && (!kind || e.kind === kind))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+export function goldBuysForMonth(entries: FinanceEntry[], month: string) {
+  return entriesForMonth(entries, month, 'investment').filter((e) => e.goldType)
+}
+
+export function assetsByType(assets: Asset[]) {
+  const map = new Map<Asset['type'], { qty: number; items: Asset[] }>()
+  for (const a of assets) {
+    const cur = map.get(a.type) ?? { qty: 0, items: [] }
+    cur.qty += a.amount
+    cur.items.push(a)
+    map.set(a.type, cur)
+  }
+  return map
+}

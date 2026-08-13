@@ -41,17 +41,60 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [data])
 
   const addEntry = useCallback((e: Omit<FinanceEntry, 'id' | 'createdAt'>) => {
-    setData((d) => ({
-      ...d,
-      entries: [
-        ...d.entries,
-        { ...e, id: uid(), createdAt: new Date().toISOString() },
-      ],
-    }))
+    setData((d) => {
+      const entry: FinanceEntry = {
+        ...e,
+        id: uid(),
+        createdAt: new Date().toISOString(),
+      }
+      let assets = d.assets
+      if (entry.goldType && entry.quantity && entry.quantity > 0) {
+        const existing = assets.find((a) => a.type === entry.goldType)
+        if (existing) {
+          assets = upsertAsset(assets, {
+            ...existing,
+            amount: existing.amount + entry.quantity,
+          })
+        } else {
+          const labels: Record<string, string> = {
+            ceyrek: 'Çeyrek altın',
+            yarim: 'Yarım altın',
+            tam: 'Tam altın',
+            altin: 'Gram altın',
+          }
+          assets = upsertAsset(assets, {
+            id: uid(),
+            type: entry.goldType,
+            name: labels[entry.goldType] ?? 'Altın',
+            amount: entry.quantity,
+          })
+        }
+      }
+      return { ...d, entries: [...d.entries, entry], assets }
+    })
   }, [])
 
   const removeEntry = useCallback((id: string) => {
-    setData((d) => ({ ...d, entries: d.entries.filter((x) => x.id !== id) }))
+    setData((d) => {
+      const entry = d.entries.find((x) => x.id === id)
+      let assets = d.assets
+      if (entry?.goldType && entry.quantity && entry.quantity > 0) {
+        const existing = assets.find((a) => a.type === entry.goldType)
+        if (existing) {
+          const nextQty = existing.amount - entry.quantity
+          if (nextQty <= 0) {
+            assets = assets.filter((a) => a.id !== existing.id)
+          } else {
+            assets = upsertAsset(assets, { ...existing, amount: nextQty })
+          }
+        }
+      }
+      return {
+        ...d,
+        entries: d.entries.filter((x) => x.id !== id),
+        assets,
+      }
+    })
   }, [])
 
   const addAsset = useCallback((a: Omit<Asset, 'id'>) => {

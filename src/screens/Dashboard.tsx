@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import {
   investmentPortfolioValue,
   pctChange,
@@ -10,9 +11,14 @@ import {
 } from '../calc'
 import { monthLabel, tl } from '../format'
 import { useStore } from '../store'
+import { createBackup, parseBackup, todayKey } from '../storage'
 
 export function Dashboard() {
-  const { data, monthKey, setHideNetWorth } = useStore()
+  const { data, monthKey, setHideNetWorth, replaceData } = useStore()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+
   const assets = totalAssets(data.assets, data.market)
   const income = sumIncome(data.entries, monthKey)
   const expense = sumExpense(data.entries, monthKey)
@@ -21,6 +27,58 @@ export function Dashboard() {
   const portfolio = investmentPortfolioValue(data.assets, data.market)
   const prev = prevMonthKey(monthKey)
   const savePct = pctChange(save, savings(data.entries, prev))
+
+  const downloadBackup = async () => {
+    setErr('')
+    setMsg('')
+    const json = createBackup(data)
+    const blob = new Blob([json], { type: 'application/json' })
+    const name = `apple-finans-yedek-${todayKey()}.json`
+
+    const file = new File([blob], name, { type: 'application/json' })
+    const nav = navigator as Navigator & {
+      canShare?: (data?: ShareData) => boolean
+      share?: (data?: ShareData) => Promise<void>
+    }
+
+    if (nav.canShare?.({ files: [file] })) {
+      try {
+        await nav.share({ files: [file], title: 'Apple Finans yedek' })
+        setMsg('Yedek paylaşıldı / kaydedildi.')
+        return
+      } catch {
+        // kullanıcı iptal ettiyse sessiz geç
+      }
+    }
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+    setMsg('Yedek dosyası indirildi. Dosyalar’a kaydet.')
+  }
+
+  const onImportFile = async (file: File | undefined) => {
+    setErr('')
+    setMsg('')
+    if (!file) return
+    try {
+      const text = await file.text()
+      const next = parseBackup(text)
+      const ok = window.confirm(
+        `Yedek yüklenecek.\n${next.entries.length} kayıt, ${next.assets.length} varlık.\nMevcut verinin üzerine yazılır. Devam?`,
+      )
+      if (!ok) return
+      replaceData(next)
+      setMsg('Yedek başarıyla yüklendi.')
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Yedek okunamadı')
+    } finally {
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
 
   return (
     <div className="stack install">
@@ -80,10 +138,27 @@ export function Dashboard() {
       )}
 
       <section className="panel">
-        <h2>Kısa not</h2>
-        <p className="sub" style={{ marginBottom: 0 }}>
-          Borç / taksit ödemelerini Aylık → Gider altında ekleyebilirsin.
+        <h2>Yedek</h2>
+        <p className="sub">
+          Veriler telefonda tutulur. Ara sıra yedek al; silinirse geri yükle.
         </p>
+        <div className="btn-row">
+          <button className="btn" type="button" onClick={downloadBackup}>
+            Yedek al
+          </button>
+          <button className="btn secondary" type="button" onClick={() => fileRef.current?.click()}>
+            Yedekten yükle
+          </button>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => onImportFile(e.target.files?.[0])}
+        />
+        {msg && <p className="empty" style={{ color: 'var(--teal-2)' }}>{msg}</p>}
+        {err && <div className="insight">{err}</div>}
       </section>
     </div>
   )

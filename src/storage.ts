@@ -81,31 +81,69 @@ export function loadData(): AppData {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return defaultData()
-    const parsed = JSON.parse(raw) as Partial<AppData> & {
-      months?: LegacyMonthlyFinance[]
-    }
-    const fromMonths =
-      !parsed.entries?.length && parsed.months?.length
-        ? migrateMonths(parsed.months)
-        : []
-    return {
-      ...defaultData(),
-      ...parsed,
-      market: { ...defaultMarket(), ...parsed.market },
-      entries: (parsed.entries?.length ? parsed.entries : fromMonths).map((e) => {
-        const date = entryDate(e)
-        return {
-          ...e,
-          date,
-          month: e.month || monthFromDate(date),
-        }
-      }),
-      assets: parsed.assets ?? [],
-      hideNetWorth: Boolean(parsed.hideNetWorth),
-    }
+    return normalizeData(JSON.parse(raw))
   } catch {
     return defaultData()
   }
+}
+
+export function normalizeData(raw: unknown): AppData {
+  const parsed = raw as Partial<AppData> & {
+    months?: LegacyMonthlyFinance[]
+    data?: Partial<AppData> & { months?: LegacyMonthlyFinance[] }
+  }
+  const body = parsed.data ?? parsed
+  const fromMonths =
+    !body.entries?.length && body.months?.length ? migrateMonths(body.months) : []
+  return {
+    ...defaultData(),
+    ...body,
+    market: { ...defaultMarket(), ...body.market },
+    entries: (body.entries?.length ? body.entries : fromMonths).map((e) => {
+      const date = entryDate(e)
+      return {
+        ...e,
+        date,
+        month: e.month || monthFromDate(date),
+        note: e.note ?? '',
+        amount: Number(e.amount) || 0,
+      }
+    }),
+    assets: (body.assets ?? []).map((a) => ({
+      ...a,
+      amount: Number(a.amount) || 0,
+    })),
+    hideNetWorth: Boolean(body.hideNetWorth),
+  }
+}
+
+export function createBackup(data: AppData): string {
+  return JSON.stringify(
+    {
+      app: 'apple-finans',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data,
+    },
+    null,
+    2,
+  )
+}
+
+export function parseBackup(raw: string): AppData {
+  const parsed = JSON.parse(raw) as unknown
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Geçersiz yedek dosyası')
+  }
+  const obj = parsed as { app?: string; data?: unknown }
+  if (obj.app && obj.app !== 'apple-finans') {
+    throw new Error('Bu dosya Apple Finans yedeği değil')
+  }
+  const data = normalizeData(obj.data ?? parsed)
+  if (!Array.isArray(data.entries) || !Array.isArray(data.assets)) {
+    throw new Error('Yedek içeriği okunamadı')
+  }
+  return data
 }
 
 export function saveData(data: AppData): void {

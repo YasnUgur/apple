@@ -30,6 +30,7 @@ type Store = {
   updateMarket: (m: Partial<MarketRates>) => void
   setMarket: (m: MarketRates) => void
   setHideNetWorth: (v: boolean) => void
+  replaceData: (next: AppData) => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -132,6 +133,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, hideNetWorth: v }))
   }, [])
 
+  const replaceData = useCallback((next: AppData) => {
+    setData(next)
+  }, [])
+
   const value = useMemo(
     () => ({
       data,
@@ -145,6 +150,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateMarket,
       setMarket,
       setHideNetWorth,
+      replaceData,
     }),
     [
       data,
@@ -157,6 +163,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateMarket,
       setMarket,
       setHideNetWorth,
+      replaceData,
     ],
   )
 

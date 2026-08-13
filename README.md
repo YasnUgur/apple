@@ -1,4 +1,4 @@
-# Apple Finans
+# Defter
 
 iPhone’da ücretsiz, App Store’suz kişisel finans uygulaması (PWA).
 

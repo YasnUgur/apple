@@ -33,7 +33,7 @@ export function Dashboard() {
     setMsg('')
     const json = createBackup(data)
     const blob = new Blob([json], { type: 'application/json' })
-    const name = `apple-finans-yedek-${todayKey()}.json`
+    const name = `defter-yedek-${todayKey()}.json`
 
     const file = new File([blob], name, { type: 'application/json' })
     const nav = navigator as Navigator & {
@@ -43,7 +43,7 @@ export function Dashboard() {
 
     if (nav.canShare?.({ files: [file] })) {
       try {
-        await nav.share({ files: [file], title: 'Apple Finans yedek' })
+        await nav.share({ files: [file], title: 'Defter yedek' })
         setMsg('Yedek paylaşıldı / kaydedildi.')
         return
       } catch {
@@ -84,7 +84,7 @@ export function Dashboard() {
     <div className="stack install">
       <header className="brand">
         <div>
-          <h1>Apple</h1>
+          <h1>Defter</h1>
           <p>{monthLabel(monthKey)}</p>
         </div>
         <button

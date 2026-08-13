@@ -137,7 +137,7 @@ export function parseBackup(raw: string): AppData {
   }
   const obj = parsed as { app?: string; data?: unknown }
   if (obj.app && obj.app !== 'apple-finans') {
-    throw new Error('Bu dosya Apple Finans yedeği değil')
+    throw new Error('Bu dosya Defter yedeği değil')
   }
   const data = normalizeData(obj.data ?? parsed)
   if (!Array.isArray(data.entries) || !Array.isArray(data.assets)) {

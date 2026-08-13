@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Apple Finans',
-        short_name: 'Apple',
+        name: 'Defter',
+        short_name: 'Defter',
         description: 'Kişisel finans ve yatırım takibi',
         theme_color: '#0F5C4C',
         background_color: '#EAF1EE',
